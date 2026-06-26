@@ -919,18 +919,26 @@
     const webhookUrl = 'https://hook.us2.make.com/c4xd3is3y6mc2lg7cf7qlxxsdllre8tf';
 
     try {
-      const formData = new FormData();
-      formData.append('cliente_nome', client.nome || '');
-      formData.append('cliente_ig', client.ig || '');
-      formData.append('cliente_email', client.email || '');
-      formData.append('total_partes', '9');
+      // Monta objeto JSON com imagens em base64
+      const payload = {
+        cliente_nome: client.nome || '',
+        cliente_ig: client.ig || '',
+        cliente_email: client.email || '',
+        total_partes: 9,
+        imagens: {}
+      };
 
       for (const part of parts) {
-        const blob = dataURLtoBlob(part.dataUrl);
-        formData.append(`post_${part.num}`, blob, `post_${part.num}.jpg`);
+        // Remove o prefixo "data:image/jpeg;base64," e envia só o base64
+        const base64 = part.dataUrl.split(',')[1];
+        payload.imagens[`post_${part.num}`] = base64;
       }
 
-      await fetch(webhookUrl, { method: 'POST', body: formData });
+      await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
     } catch (err) {
       console.error('Erro ao enviar:', err);
     }
