@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GridPost — Seu mosaico no Instagram</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Inter:wght@400;500;600&display=swap');
+
+  :root {
+    --black: #0a0a0a;
+    --white: #f5f5f0;
+    --accent: #7c3aed;
+    --accent2: #a855f7;
+    --muted: #3d3d3d;
+    --card: #141414;
+    --border: #222;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* GRID BACKGROUND */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,58,237,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,58,237,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 0 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* HERO */
+  .hero {
+    padding: 60px 0 40px;
+    text-align: center;
+  }
+
+  .logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 48px;
+  }
+
+  .logo-grid {
+    display: grid;
+    grid-template-columns: repeat(3,8px);
+    gap: 2px;
+  }
+
+  .logo-grid span {
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 1px;
+    display: block;
+  }
+
+  .logo-grid span:nth-child(5) { background: var(--accent2); }
+
+  .logo-text {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: var(--white);
+  }
+
+  .hero-tag {
+    display: inline-block;
+    background: rgba(124,58,237,0.15);
+    border: 1px solid rgba(124,58,237,0.3);
+    color: var(--accent2);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 100px;
+    margin-bottom: 24px;
+  }
+
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(36px, 10vw, 52px);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -2px;
+    margin-bottom: 20px;
+  }
+
+  .hero h1 em {
+    font-style: normal;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero p {
+    font-size: 16px;
+    color: #888;
+    line-height: 1.6;
+    margin-bottom: 40px;
+  }
+
+  /* PREVIEW MOSAIC */
+  .mosaic-preview {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3px;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 48px;
+    aspect-ratio: 1;
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .mosaic-cell {
+    background: var(--card);
+    border: 1px solid var(--border);
+    aspect-ratio: 1;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mosaic-cell .num {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: rgba(124,58,237,0.3);
+  }
+
+  .mosaic-cell.highlight { background: rgba(124,58,237,0.1); }
+  .mosaic-cell.highlight .num { color: var(--accent2); opacity: 0.6; }
+
+  /* HOW IT WORKS */
+  .section {
+    padding: 48px 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin-bottom: 24px;
+  }
+
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .step {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .step-num {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: rgba(124,58,237,0.15);
+    border: 1px solid rgba(124,58,237,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--accent2);
+    flex-shrink: 0;
+  }
+
+  .step-text strong {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--white);
+  }
+
+  .step-text span {
+    font-size: 13px;
+    color: #666;
+    line-height: 1.5;
+  }
+
+  /* PRICING */
+  .price-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .price-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+
+  .price-amount {
+    font-family: 'Syne', sans-serif;
+    font-size: 52px;
+    font-weight: 800;
+    letter-spacing: -2px;
+    color: var(--white);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .price-amount small {
+    font-size: 22px;
+    color: #666;
+    letter-spacing: 0;
+    font-weight: 400;
+  }
+
+  .price-desc {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 24px;
+  }
+
+  .price-features {
+    list-style: none;
+    text-align: left;
+    margin-bottom: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .price-features li {
+    font-size: 14px;
+    color: #aaa;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .price-features li::before {
+    content: '✓';
+    color: var(--accent2);
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  /* CTA BUTTON */
+  .btn-primary {
+    display: block;
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white;
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: opacity 0.2s, transform 0.1s;
+    letter-spacing: -0.3px;
+  }
+
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-primary:active { transform: scale(0.98); }
+
+  /* UPLOAD SECTION (hidden initially) */
+  #upload-section {
+    display: none;
+    padding: 40px 0;
+  }
+
+  .upload-box {
+    background: var(--card);
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    position: relative;
+  }
+
+  .upload-box:hover, .upload-box.drag-over {
+    border-color: var(--accent);
+    background: rgba(124,58,237,0.05);
+  }
+
+  .upload-box input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .upload-icon {
+    width: 56px;
+    height: 56px;
+    background: rgba(124,58,237,0.15);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 24px;
+  }
+
+  .upload-box h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .upload-box p {
+    font-size: 13px;
+    color: #666;
+  }
+
+  /* PREVIEW + PROCESS */
+  #preview-section { display: none; padding: 24px 0; }
+
+  .preview-img {
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+
+  .preview-img img {
+    width: 100%;
+    display: block;
+    border-radius: 12px;
+  }
+
+  /* PROCESSING */
+  #processing-section {
+    display: none;
+    padding: 60px 0;
+    text-align: center;
+  }
+
+  .spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 24px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #processing-section h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  #processing-section p { font-size: 14px; color: #666; }
+
+  /* SUCCESS */
+  #success-section {
+    display: none;
+    padding: 60px 0;
+    text-align: center;
+  }
+
+  .success-icon {
+    width: 72px;
+    height: 72px;
+    background: rgba(124,58,237,0.15);
+    border: 2px solid rgba(124,58,237,0.3);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    margin: 0 auto 24px;
+  }
+
+  #success-section h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin-bottom: 12px;
+  }
+
+  #success-section p {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 8px;
+  }
+
+  .success-steps {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 28px 0;
+    text-align: left;
+  }
+
+  .success-steps p {
+    font-size: 13px;
+    color: #aaa;
+    margin-bottom: 10px;
+  }
+
+  .success-steps p:last-child { margin-bottom: 0; }
+
+  .success-steps strong { color: var(--white); }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px 0;
+    text-align: center;
+  }
+
+  footer p {
+    font-size: 12px;
+    color: #444;
+  }
+
+  /* CHECKOUT MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 100;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: #111;
+    border: 1px solid var(--border);
+    border-radius: 20px 20px 0 0;
+    padding: 32px 24px 48px;
+    width: 100%;
+    max-width: 480px;
+    animation: slideUp 0.3s ease;
+  }
+
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  .modal-handle {
+    width: 40px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto 28px;
+  }
+
+  .modal h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 6px;
+    letter-spacing: -0.5px;
+  }
+
+  .modal p {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 24px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .form-group input {
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--white);
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .form-group input:focus { border-color: var(--accent); }
+  .form-group input::placeholder { color: #444; }
+
+  .modal-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 0;
+    border-top: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+
+  .modal-total span { font-size: 14px; color: #666; }
+
+  .modal-total strong {
+    font-family: 'Syne', sans-serif;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--white);
+  }
+
+  .btn-close {
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 13px;
+    cursor: pointer;
+    display: block;
+    margin: 16px auto 0;
+    text-decoration: underline;
+  }
+</style>
+</head>
+<body>
+
+<!-- LANDING PAGE -->
+<div id="landing-section">
+  <div class="container">
+    <div class="hero">
+      <div class="logo">
+        <div class="logo-grid">
+          <span></span><span></span><span></span>
+          <span></span><span></span><span></span>
+          <span></span><span></span><span></span>
+        </div>
+        <span class="logo-text">GridPost</span>
+      </div>
+
+      <div class="hero-tag">Mosaico para Instagram</div>
+
+      <h1>Sua foto vira um <em>mosaico</em> no grid</h1>
+
+      <p>Você manda a foto, a gente corta em 9 partes e publica no seu perfil na ordem certa. Seu grid fica incrível automaticamente.</p>
+
+      <div class="mosaic-preview">
+        <div class="mosaic-cell highlight"><span class="num">1</span></div>
+        <div class="mosaic-cell highlight"><span class="num">2</span></div>
+        <div class="mosaic-cell highlight"><span class="num">3</span></div>
+        <div class="mosaic-cell"><span class="num">4</span></div>
+        <div class="mosaic-cell highlight"><span class="num">5</span></div>
+        <div class="mosaic-cell"><span class="num">6</span></div>
+        <div class="mosaic-cell"><span class="num">7</span></div>
+        <div class="mosaic-cell"><span class="num">8</span></div>
+        <div class="mosaic-cell"><span class="num">9</span></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Como funciona</div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-text">
+            <strong>Você paga e manda a foto</strong>
+            <span>Pagamento rápido pelo Mercado Pago. Depois você faz o upload da sua imagem.</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-text">
+            <strong>A gente corta em 9 partes</strong>
+            <span>Sua foto é dividida automaticamente nas 9 peças do mosaico, na ordem certa.</span>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-text">
+            <strong>Postamos no seu perfil</strong>
+            <span>As 9 imagens são publicadas em sequência. Seu grid fica perfeito.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Valor</div>
+      <div class="price-card">
+        <div class="price-amount"><small>R$</small> 19<small>,90</small></div>
+        <div class="price-desc">por mosaico publicado</div>
+        <ul class="price-features">
+          <li>Foto cortada em 9 partes</li>
+          <li>Publicação automática no seu perfil</li>
+          <li>Ordem garantida do grid</li>
+          <li>Entrega em até 24 horas</li>
+        </ul>
+        <button class="btn-primary" onclick="openCheckout()">Quero meu mosaico →</button>
+      </div>
+    </div>
+
+    <footer>
+      <p>GridPost · Mosaico automático para Instagram</p>
+    </footer>
+  </div>
+</div>
+
+<!-- UPLOAD SECTION -->
+<div id="upload-section">
+  <div class="container">
+    <div style="padding: 48px 0 24px; text-align:center;">
+      <div class="logo" style="justify-content:center; margin-bottom:24px;">
+        <div class="logo-grid">
+          <span></span><span></span><span></span>
+          <span></span><span></span><span></span>
+          <span></span><span></span><span></span>
+        </div>
+        <span class="logo-text">GridPost</span>
+      </div>
+      <div class="hero-tag">Pagamento confirmado ✓</div>
+      <h2 style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;letter-spacing:-1px;margin:16px 0 8px;">Agora manda sua foto</h2>
+      <p style="font-size:14px;color:#666;">Escolha uma imagem quadrada para melhor resultado. Mínimo 1080×1080px.</p>
+    </div>
+
+    <div class="upload-box" id="upload-box">
+      <input type="file" accept="image/*" id="file-input" onchange="handleFile(this)">
+      <div class="upload-icon">📷</div>
+      <h3>Toque para escolher a foto</h3>
+      <p>JPG ou PNG · Mínimo 1080px</p>
+    </div>
+
+    <div id="preview-section">
+      <div style="margin: 24px 0 12px;">
+        <p style="font-size:13px;color:#666;margin-bottom:12px;">Prévia da sua foto:</p>
+        <div class="preview-img">
+          <img id="preview-img" src="" alt="Preview">
+        </div>
+      </div>
+      <button class="btn-primary" onclick="processImage()">Confirmar e enviar →</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROCESSING -->
+<div id="processing-section">
+  <div class="container">
+    <div class="spinner"></div>
+    <h3>Cortando sua foto...</h3>
+    <p>Estamos preparando as 9 partes do mosaico.</p>
+  </div>
+</div>
+
+<!-- SUCCESS -->
+<div id="success-section">
+  <div class="container">
+    <div class="success-icon">✓</div>
+    <h2>Foto enviada!</h2>
+    <p>Recebemos sua imagem e já estamos preparando o seu mosaico.</p>
+
+    <div class="success-steps">
+      <p><strong>O que acontece agora:</strong></p>
+      <p>📐 Sua foto será cortada em 9 partes automaticamente</p>
+      <p>📱 As partes serão publicadas no seu Instagram em sequência</p>
+      <p>⏱️ Prazo de até 24 horas para publicação</p>
+      <p>✅ Seu grid vai ficar incrível!</p>
+    </div>
+
+    <p style="font-size:13px;color:#555;">Dúvidas? Fale no Instagram <strong style="color:#aaa;">@gridpost</strong></p>
+  </div>
+</div>
+
+<!-- CHECKOUT MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3>Pedir mosaico</h3>
+    <p>Preencha seus dados para continuar</p>
+
+    <div class="form-group">
+      <label>Seu nome</label>
+      <input type="text" id="input-nome" placeholder="Como te chamam?">
+    </div>
+
+    <div class="form-group">
+      <label>Instagram</label>
+      <input type="text" id="input-ig" placeholder="@seuperfil">
+    </div>
+
+    <div class="form-group">
+      <label>E-mail</label>
+      <input type="email" id="input-email" placeholder="seu@email.com">
+    </div>
+
+    <div class="modal-total">
+      <span>Total</span>
+      <strong>R$ 19,90</strong>
+    </div>
+
+    <button class="btn-primary" onclick="goToPayment()">Ir para pagamento →</button>
+    <button class="btn-close" onclick="closeCheckout()">Cancelar</button>
+  </div>
+</div>
+
+<!-- CANVAS para corte (oculto) -->
+<canvas id="cut-canvas" style="display:none;"></canvas>
+
+<script>
+  let uploadedFile = null;
+  let clientData = {};
+
+  // ---- MODAL ----
+  function openCheckout() {
+    document.getElementById('modal').classList.add('open');
+  }
+
+  function closeCheckout() {
+    document.getElementById('modal').classList.remove('open');
+  }
+
+  function goToPayment() {
+    const nome = document.getElementById('input-nome').value.trim();
+    const ig = document.getElementById('input-ig').value.trim();
+    const email = document.getElementById('input-email').value.trim();
+
+    if (!nome || !ig || !email) {
+      alert('Preencha todos os campos para continuar.');
+      return;
+    }
+
+    clientData = { nome, ig, email };
+
+    // Salva no localStorage para recuperar após pagamento
+    localStorage.setItem('gridpost_client', JSON.stringify(clientData));
+
+    // TODO: substituir pela URL real do Mercado Pago
+    const mpUrl = `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=SEU_PREFERENCE_ID`;
+
+    // Por enquanto simula o pagamento e vai direto para upload
+    // Em produção: window.location.href = mpUrl;
+    closeCheckout();
+    showUpload();
+  }
+
+  // ---- UPLOAD ----
+  function showUpload() {
+    document.getElementById('landing-section').style.display = 'none';
+    document.getElementById('upload-section').style.display = 'block';
+    window.scrollTo(0, 0);
+  }
+
+  function handleFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+
+    uploadedFile = file;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      document.getElementById('preview-img').src = e.target.result;
+      document.getElementById('preview-section').style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Drag & drop
+  const uploadBox = document.getElementById('upload-box');
+  uploadBox.addEventListener('dragover', (e) => { e.preventDefault(); uploadBox.classList.add('drag-over'); });
+  uploadBox.addEventListener('dragleave', () => uploadBox.classList.remove('drag-over'));
+  uploadBox.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadBox.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      uploadedFile = file;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        document.getElementById('preview-img').src = ev.target.result;
+        document.getElementById('preview-section').style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  // ---- CORTE DA IMAGEM ----
+  async function processImage() {
+    if (!uploadedFile) return;
+
+    document.getElementById('upload-section').style.display = 'none';
+    document.getElementById('processing-section').style.display = 'block';
+    window.scrollTo(0, 0);
+
+    const parts = await cutImageIn9(uploadedFile);
+    await uploadToDrive(parts);
+  }
+
+  function cutImageIn9(file) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const reader = new FileReader();
+
+      reader.onload = (e) => { img.src = e.target.result; };
+      reader.readAsDataURL(file);
+
+      img.onload = () => {
+        const canvas = document.getElementById('cut-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Recorte quadrado centralizado
+        const size = Math.min(img.width, img.height);
+        const offsetX = (img.width - size) / 2;
+        const offsetY = (img.height - size) / 2;
+
+        const partSize = Math.floor(size / 3);
+        canvas.width = partSize;
+        canvas.height = partSize;
+
+        const parts = [];
+
+        // Ordem de corte: linha por linha (1→9)
+        // Ordem de postagem: de trás pra frente (9→1) para grid ficar certo
+        for (let row = 0; row < 3; row++) {
+          for (let col = 0; col < 3; col++) {
+            ctx.clearRect(0, 0, partSize, partSize);
+            ctx.drawImage(
+              img,
+              offsetX + col * partSize,
+              offsetY + row * partSize,
+              partSize, partSize,
+              0, 0, partSize, partSize
+            );
+
+            const partNum = row * 3 + col + 1; // 1 a 9
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+            parts.push({ num: partNum, dataUrl });
+          }
+        }
+
+        // Ordena da parte 9 para 1 (ordem de postagem)
+        parts.sort((a, b) => b.num - a.num);
+        resolve(parts);
+      };
+    });
+  }
+
+  // ---- UPLOAD PARA GOOGLE DRIVE ----
+  async function uploadToDrive(parts) {
+    const client = JSON.parse(localStorage.getItem('gridpost_client') || '{}');
+    const timestamp = Date.now();
+    const folderName = `GridPost_${client.ig || 'cliente'}_${timestamp}`;
+
+    // Converte dataURLs para Blobs e faz upload via Google Drive API
+    // NOTA: Em produção, usar OAuth2 do Google Drive aqui
+    // Por enquanto, faz download das imagens para o cliente
+
+    // Simulação: em produção integrar com Google Drive API ou backend
+
+    // Para MVP sem backend: envia via formulário/email ou baixa as imagens
+    await simulateUpload(parts, folderName, client);
+  }
+
+  async function simulateUpload(parts, folderName, client) {
+    // Simula processamento de 2 segundos por parte
+    await new Promise(r => setTimeout(r, 2500));
+
+    // Em produção: POST para webhook do Make.com com as imagens
+    // const webhookUrl = 'https://hook.make.com/SEU_WEBHOOK_AQUI';
+
+    // Por ora: baixa as 9 imagens numeradas para o dispositivo
+    // Em versão com Make.com integrado, descomente o webhook abaixo
+
+    /*
+    const formData = new FormData();
+    formData.append('cliente', JSON.stringify(client));
+    for (const part of parts) {
+      const blob = dataURLtoBlob(part.dataUrl);
+      formData.append(`post_${part.num}`, blob, `post_${part.num}.jpg`);
+    }
+    await fetch(webhookUrl, { method: 'POST', body: formData });
+    */
+
+    showSuccess();
+  }
+
+  function dataURLtoBlob(dataUrl) {
+    const arr = dataUrl.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) u8arr[n] = bstr.charCodeAt(n);
+    return new Blob([u8arr], { type: mime });
+  }
+
+  function showSuccess() {
+    document.getElementById('processing-section').style.display = 'none';
+    document.getElementById('success-section').style.display = 'block';
+    window.scrollTo(0, 0);
+  }
+
+  // Verifica se voltou do pagamento (parâmetro na URL)
+  window.addEventListener('load', () => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('payment') === 'approved') {
+      showUpload();
+    }
+  });
+</script>
+
+</body>
+</html>
