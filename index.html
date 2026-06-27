@@ -839,6 +839,8 @@
   });
 
   // ---- CORTE DA IMAGEM ----
+  let totalPartes = 9;
+
   async function processImage() {
     if (!uploadedFile) return;
 
@@ -846,11 +848,17 @@
     document.getElementById('processing-section').style.display = 'block';
     window.scrollTo(0, 0);
 
-    const parts = await cutImageIn9(uploadedFile);
+    const parts = await cutImage(uploadedFile, totalPartes);
     await uploadToDrive(parts);
   }
 
-  function cutImageIn9(file) {
+  function detectPartes(img) {
+    const ratio = img.width / img.height;
+    if (ratio >= 1.5) return 3;
+    return 9;
+  }
+
+  function cutImage(file, forceParts) {
     return new Promise((resolve) => {
       const img = new Image();
       const reader = new FileReader();
@@ -862,44 +870,60 @@
         const canvas = document.getElementById('cut-canvas');
         const ctx = canvas.getContext('2d');
 
-        // Recorte quadrado centralizado
-        const size = Math.min(img.width, img.height);
-        const offsetX = (img.width - size) / 2;
-        const offsetY = (img.height - size) / 2;
+        const numPartes = forceParts || detectPartes(img);
+        totalPartes = numPartes;
 
-        const partSize = Math.floor(size / 3);
-        canvas.width = partSize;
-        canvas.height = partSize;
+        const rows = numPartes === 3 ? 1 : 3;
+        const cols = 3;
+        const targetRatio = cols / rows;
+        const imgRatio = img.width / img.height;
+
+        let drawW, drawH, drawX, drawY, canvasW, canvasH;
+
+        if (imgRatio > targetRatio) {
+          canvasW = img.width;
+          canvasH = Math.round(img.width / targetRatio);
+          drawX = 0;
+          drawY = Math.round((canvasH - img.height) / 2);
+        } else {
+          canvasH = img.height;
+          canvasW = Math.round(img.height * targetRatio);
+          drawX = Math.round((canvasW - img.width) / 2);
+          drawY = 0;
+        }
+
+        const partW = Math.floor(canvasW / cols);
+        const partH = Math.floor(canvasH / rows);
+        canvas.width = partW;
+        canvas.height = partH;
 
         const parts = [];
 
-        // Ordem de corte: linha por linha (1→9)
-        // Ordem de postagem: de trás pra frente (9→1) para grid ficar certo
-        for (let row = 0; row < 3; row++) {
-          for (let col = 0; col < 3; col++) {
-            ctx.clearRect(0, 0, partSize, partSize);
+        for (let row = 0; row < rows; row++) {
+          for (let col = 0; col < cols; col++) {
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, partW, partH);
             ctx.drawImage(
               img,
-              offsetX + col * partSize,
-              offsetY + row * partSize,
-              partSize, partSize,
-              0, 0, partSize, partSize
+              0, 0, img.width, img.height,
+              drawX - col * partW,
+              drawY - row * partH,
+              canvasW, canvasH
             );
 
-            const partNum = row * 3 + col + 1; // 1 a 9
+            const partNum = row * cols + col + 1;
             const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
             parts.push({ num: partNum, dataUrl });
           }
         }
 
-        // Ordena da parte 9 para 1 (ordem de postagem)
         parts.sort((a, b) => b.num - a.num);
         resolve(parts);
       };
     });
   }
 
-  // ---- UPLOAD PARA GOOGLE DRIVE ----
+    // ---- UPLOAD PARA GOOGLE DRIVE ----
   async function uploadToDrive(parts) {
     const client = JSON.parse(localStorage.getItem('gridpost_client') || '{}');
     const timestamp = Date.now();
@@ -916,7 +940,7 @@
   }
 
   async function simulateUpload(parts, folderName, client) {
-    const webhookUrl = 'https://hook.us2.make.com/quw1v6ikccsbqo4x8rbyeka8o3myytmy';
+    const webhookUrl = 'https://hook.us2.make.com/c4xd3is3y6mc2lg7cf7qlxxsdllre8tf';
     const imgbbKey = '4691c8c17e5c6c99b3364da6cf889a6a';
 
     try {
@@ -946,7 +970,7 @@
         cliente_nome: client.nome || '',
         cliente_ig: client.ig || '',
         cliente_email: client.email || '',
-        total_partes: 9,
+        total_partes: totalPartes,
         ...urls
       };
 
