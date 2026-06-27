@@ -917,25 +917,45 @@
 
   async function simulateUpload(parts, folderName, client) {
     const webhookUrl = 'https://hook.us2.make.com/c4xd3is3y6mc2lg7cf7qlxxsdllre8tf';
+    const imgbbKey = '4691c8c17e5c6c99b3364da6cf889a6a';
 
     try {
+      // Envia cada imagem direto para o ImgBB e coleta as URLs
+      const urls = {};
+
+      for (const part of parts) {
+        const base64 = part.dataUrl.split(',')[1];
+
+        const formData = new FormData();
+        formData.append('key', imgbbKey);
+        formData.append('image', base64);
+
+        const res = await fetch('https://api.imgbb.com/1/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        const json = await res.json();
+        if (json.success) {
+          urls[`post_${part.num}`] = json.data.url;
+        }
+      }
+
+      // Envia só as URLs para o Make.com
       const payload = {
         cliente_nome: client.nome || '',
         cliente_ig: client.ig || '',
         cliente_email: client.email || '',
-        total_partes: 9
+        total_partes: 9,
+        ...urls
       };
-
-      for (const part of parts) {
-        const base64 = part.dataUrl.split(',')[1];
-        payload[`post_${part.num}`] = base64;
-      }
 
       await fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
+
     } catch (err) {
       console.error('Erro ao enviar:', err);
     }
