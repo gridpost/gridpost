@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -786,6 +785,23 @@
   let uploadedFile = null;
   let clientData = {};
 
+  // Detecta retorno do Mercado Pago após pagamento aprovado
+  (function checkPaymentReturn() {
+    if (window.location.search.includes('payment=approved')) {
+      // Recupera dados do cliente salvos antes do redirect
+      const saved = localStorage.getItem('gridpost_client');
+      if (saved) {
+        try { clientData = JSON.parse(saved); } catch(e) {}
+      }
+      // Remove o parâmetro da URL sem recarregar
+      window.history.replaceState({}, '', window.location.pathname);
+      // Espera o DOM carregar e abre direto a tela de upload
+      document.addEventListener('DOMContentLoaded', function() {
+        showUpload();
+      });
+    }
+  })();
+
   // ---- MODAL ----
   function openCheckout() {
     document.getElementById('modal').classList.add('open');
@@ -810,16 +826,8 @@
     // Salva no localStorage para recuperar após pagamento
     localStorage.setItem('gridpost_client', JSON.stringify(clientData));
 
-    const PREF_ID = 'SEU_PREFERENCE_ID'; // ← substitua pelo ID real do Mercado Pago
-    if (PREF_ID === 'SEU_PREFERENCE_ID') {
-      // MODO SIMULAÇÃO (sem credenciais MP configuradas)
-      closeCheckout();
-      showUpload();
-    } else {
-      // MODO PRODUÇÃO: redireciona para o checkout do Mercado Pago
-      const mpUrl = `https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=${PREF_ID}`;
-      window.location.href = mpUrl;
-    }
+    // Salva dados e redireciona para o link de pagamento do Mercado Pago
+    window.location.href = 'https://mpago.la/15riiBq';
   }
 
   // ---- UPLOAD ----
