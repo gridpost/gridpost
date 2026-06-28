@@ -782,24 +782,92 @@
 <canvas id="cut-canvas" style="display:none;"></canvas>
 
 <script>
+  const BACKEND = 'https://gridpost-pagamentos.vercel.app';
+
   let uploadedFile = null;
   let clientData = {};
 
-  // Detecta retorno do Mercado Pago após pagamento aprovado
-  (function checkPaymentReturn() {
-    if (window.location.search.includes('payment=approved')) {
-      // Recupera dados do cliente salvos antes do redirect
+  // Verifica ref pendente no localStorage ou ?ref= da URL e exibe overlay de confirmação
+  (function checkPendingPayment() {
+    const ref = new URLSearchParams(window.location.search).get('ref') || localStorage.getItem('gridpost_ref');
+    if (!ref) return;
+
+    localStorage.setItem('gridpost_ref', ref);
+    window.history.replaceState({}, '', window.location.pathname);
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(10,10,10,0.97);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;';
+
+    const spinner = document.createElement('div');
+    spinner.className = 'spinner';
+
+    const msg = document.createElement('p');
+    msg.style.cssText = 'font-family:"Syne",sans-serif;font-size:20px;font-weight:700;color:#f5f5f0;margin:0 0 12px;';
+    msg.textContent = 'Confirmando seu pagamento...';
+
+    const sub = document.createElement('p');
+    sub.style.cssText = 'font-size:13px;color:#666;margin:0;';
+    sub.textContent = 'Isso pode levar alguns segundos.';
+
+    overlay.appendChild(spinner);
+    overlay.appendChild(msg);
+    overlay.appendChild(sub);
+    document.body.appendChild(overlay);
+
+    function onPaid() {
+      overlay.remove();
+      localStorage.removeItem('gridpost_ref');
       const saved = localStorage.getItem('gridpost_client');
-      if (saved) {
-        try { clientData = JSON.parse(saved); } catch(e) {}
-      }
-      // Remove o parâmetro da URL sem recarregar
-      window.history.replaceState({}, '', window.location.pathname);
-      // Espera o DOM carregar e abre direto a tela de upload
-      document.addEventListener('DOMContentLoaded', function() {
-        showUpload();
-      });
+      if (saved) try { clientData = JSON.parse(saved); } catch(e) {}
+      showUpload();
     }
+
+    function showTimeout() {
+      spinner.style.display = 'none';
+      sub.style.display = 'none';
+      msg.textContent = 'Ainda não confirmamos seu pagamento. Se já pagou, aguarde alguns segundos.';
+
+      const btnVerify = document.createElement('button');
+      btnVerify.className = 'btn-primary';
+      btnVerify.style.cssText = 'margin-top:24px;max-width:300px;width:100%;';
+      btnVerify.textContent = 'Verificar agora';
+      btnVerify.onclick = () => {
+        btnVerify.remove();
+        btnBack.remove();
+        spinner.style.display = 'block';
+        sub.style.display = 'block';
+        msg.textContent = 'Confirmando seu pagamento...';
+        startPolling();
+      };
+
+      const btnBack = document.createElement('button');
+      btnBack.className = 'btn-close';
+      btnBack.textContent = 'Voltar';
+      btnBack.onclick = () => { localStorage.removeItem('gridpost_ref'); overlay.remove(); };
+
+      overlay.appendChild(btnVerify);
+      overlay.appendChild(btnBack);
+    }
+
+    function startPolling() {
+      let attempts = 0;
+      const MAX = 45; // 45 × 4s = 3 min
+
+      async function poll() {
+        attempts++;
+        try {
+          const r = await fetch(BACKEND + '/status/' + ref);
+          const data = await r.json();
+          if (data.pago) { onPaid(); return; }
+        } catch(e) {}
+        if (attempts >= MAX) { showTimeout(); return; }
+        setTimeout(poll, 4000);
+      }
+
+      setTimeout(poll, 4000);
+    }
+
+    startPolling();
   })();
 
   // ---- MODAL ----
@@ -811,7 +879,7 @@
     document.getElementById('modal').classList.remove('open');
   }
 
-  function goToPayment() {
+  async function goToPayment() {
     const nome = document.getElementById('input-nome').value.trim();
     const ig = document.getElementById('input-ig').value.trim();
     const email = document.getElementById('input-email').value.trim();
@@ -822,12 +890,20 @@
     }
 
     clientData = { nome, ig, email };
-
-    // Salva no localStorage para recuperar após pagamento
     localStorage.setItem('gridpost_client', JSON.stringify(clientData));
 
-    // Salva dados e redireciona para o link de pagamento do Mercado Pago
-    window.location.href = 'https://mpago.la/15riiBq';
+    try {
+      const r = await fetch(BACKEND + '/criar-pagamento', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, email })
+      });
+      const data = await r.json();
+      localStorage.setItem('gridpost_ref', data.ref);
+      window.location.href = data.init_point;
+    } catch(err) {
+      alert('Erro ao gerar pagamento. Tente novamente.');
+    }
   }
 
   // ---- UPLOAD ----
@@ -1065,13 +1141,6 @@
     window.scrollTo(0, 0);
   }
 
-  // Verifica se voltou do pagamento (parâmetro na URL)
-  window.addEventListener('load', () => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('payment') === 'approved') {
-      showUpload();
-    }
-  });
 </script>
 
 </body>
