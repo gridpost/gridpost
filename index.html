@@ -899,6 +899,11 @@
         body: JSON.stringify({ nome, email })
       });
       const data = await r.json();
+      if (!r.ok || !data.init_point) {
+        console.error('Erro backend:', r.status, data);
+        alert('Não consegui gerar o pagamento. Confira o email e tente de novo.');
+        return;
+      }
       localStorage.setItem('gridpost_ref', data.ref);
       window.location.href = data.init_point;
     } catch(err) {

@@ -34,7 +34,7 @@ from datetime import datetime, timezone
 import httpx
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("gridpost")
@@ -78,7 +78,7 @@ def ping():
 # ---------------------------------------------------------------------------
 class CriarPagamentoIn(BaseModel):
     nome: str | None = None
-    email: EmailStr | None = None
+    email: str | None = None
 
 
 @app.post("/criar-pagamento")
