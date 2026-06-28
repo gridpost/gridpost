@@ -50,6 +50,8 @@ BASE_URL = os.environ["BASE_URL"].rstrip("/")
 UPLOAD_URL = os.environ["UPLOAD_URL"]
 PRECO = float(os.environ.get("PRECO", "14.99"))
 ALLOWED_ORIGINS = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "*").split(",")]
+MAKE_PUBLISH_URL = os.environ.get("MAKE_PUBLISH_URL", "")
+MAKE_PUBLISH_SECRET = os.environ.get("MAKE_PUBLISH_SECRET", "")
 
 MP_API = "https://api.mercadopago.com"
 SUPA_TABLE = f"{SUPABASE_URL}/rest/v1/gridpost_pagamentos"
@@ -79,6 +81,15 @@ def ping():
 class CriarPagamentoIn(BaseModel):
     nome: str | None = None
     email: str | None = None
+
+
+class PublicarIn(BaseModel):
+    ref: str
+    cliente_nome: str | None = None
+    cliente_ig: str | None = None
+    cliente_email: str | None = None
+    total_partes: int | None = None
+    posts: dict[str, str] = {}
 
 
 @app.post("/criar-pagamento")
@@ -229,6 +240,55 @@ async def status(ref: str):
         return {"ref": ref, "status": "not_found", "pago": False}
     reg = linhas[0]
     return {"ref": ref, "status": reg["status"], "pago": reg["status"] == "approved"}
+
+
+# ---------------------------------------------------------------------------
+# 4) Publicar mosaico (só libera se pagamento aprovado e não publicado ainda)
+# ---------------------------------------------------------------------------
+@app.post("/publicar")
+async def publicar(dados: PublicarIn):
+    # 1. Busca o pedido no Supabase
+    async with httpx.AsyncClient(timeout=10) as client:
+        r = await client.get(
+            f"{SUPA_TABLE}?external_reference=eq.{dados.ref}&select=status,publicado",
+            headers=_supa_headers(),
+        )
+    linhas = r.json() if r.status_code == 200 else []
+    if not linhas:
+        raise HTTPException(404, "pedido nao encontrado")
+    reg = linhas[0]
+
+    # 2. Só publica se estiver pago
+    if reg.get("status") != "approved":
+        raise HTTPException(403, "pagamento nao aprovado")
+
+    # 3. Evita publicar duas vezes com o mesmo pagamento
+    if reg.get("publicado"):
+        raise HTTPException(409, "pedido ja publicado")
+
+    # 4. Marca como publicado
+    async with httpx.AsyncClient(timeout=10) as client:
+        await client.patch(
+            f"{SUPA_TABLE}?external_reference=eq.{dados.ref}",
+            headers={**_supa_headers(), "Prefer": "return=minimal"},
+            json={"publicado": True},
+        )
+
+    # 5. Monta o payload e manda pro Make (com a senha)
+    payload = {
+        "cliente_nome": dados.cliente_nome or "",
+        "cliente_ig": dados.cliente_ig or "",
+        "cliente_email": dados.cliente_email or "",
+        "total_partes": dados.total_partes,
+        "secret": MAKE_PUBLISH_SECRET,
+        **dados.posts,
+    }
+    async with httpx.AsyncClient(timeout=30) as client:
+        resp = await client.post(MAKE_PUBLISH_URL, json=payload)
+    if resp.status_code not in (200, 201, 204):
+        raise HTTPException(502, "falha ao enviar para publicacao")
+
+    return {"ok": True}
 
 
 # ---------------------------------------------------------------------------
