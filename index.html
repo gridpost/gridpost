@@ -1083,7 +1083,6 @@
   }
 
   async function simulateUpload(parts, folderName, client) {
-    const webhookUrl = 'https://hook.us2.make.com/quw1v6ikccsbqo4x8rbyeka8o3myytmy';
     const imgbbKey = '4691c8c17e5c6c99b3364da6cf889a6a';
 
     try {
@@ -1108,20 +1107,25 @@
         }
       }
 
-      // Envia só as URLs para o Make.com
-      const payload = {
-        cliente_nome: client.nome || '',
-        cliente_ig: client.ig || '',
-        cliente_email: client.email || '',
-        total_partes: totalPartes,
-        ...urls
-      };
-
-      await fetch(webhookUrl, {
+      // Envia ao backend, que confere o pagamento antes de publicar no Make
+      const ref = localStorage.getItem('gridpost_ref');
+      const resp = await fetch(BACKEND + '/publicar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          ref: ref,
+          cliente_nome: client.nome || '',
+          cliente_ig: client.ig || '',
+          cliente_email: client.email || '',
+          total_partes: totalPartes,
+          posts: urls
+        })
       });
+      if (!resp.ok) {
+        console.error('Erro ao publicar:', resp.status);
+        alert('Houve um problema ao enviar para publicação. Fale com o suporte.');
+        return;
+      }
 
     } catch (err) {
       console.error('Erro ao enviar:', err);
