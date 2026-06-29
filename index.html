@@ -816,7 +816,8 @@
 
     function onPaid() {
       overlay.remove();
-      localStorage.removeItem('gridpost_ref');
+      // NAO apagar o ref aqui: ele e necessario na hora de publicar (/publicar).
+      // A limpeza acontece em simulateUpload(), so depois de publicar com sucesso.
       const saved = localStorage.getItem('gridpost_client');
       if (saved) try { clientData = JSON.parse(saved); } catch(e) {}
       showUpload();
@@ -1126,6 +1127,9 @@
         alert('Houve um problema ao enviar para publicação. Fale com o suporte.');
         return;
       }
+
+      // Publicacao confirmada: agora sim pode limpar o ref.
+      localStorage.removeItem('gridpost_ref');
 
     } catch (err) {
       console.error('Erro ao enviar:', err);
